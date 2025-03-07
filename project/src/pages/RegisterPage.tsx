@@ -1,0 +1,212 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import useAuthStore from '../store/authStore';
+
+interface RegisterFormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+const RegisterPage: React.FC = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register: registerUser, isLoading, error } = useAuthStore();
+  const navigate = useNavigate();
+  
+  const { 
+    register, 
+    handleSubmit, 
+    watch,
+    formState: { errors } 
+  } = useForm<RegisterFormData>();
+  
+  const password = watch('password', '');
+  
+  const onSubmit = async (data: RegisterFormData) => {
+    try {
+      await registerUser(data.username, data.email, data.password);
+      navigate('/');
+    } catch (error) {
+      // Error is handled in the store
+    }
+  };
+  
+  return (
+    <div className="py-16 bg-gray-50">
+      <div className="container max-w-md mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-2">Create an Account</h1>
+            <p className="text-gray-600">Join WITTY WITI today</p>
+          </div>
+          
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                {...register('username', { 
+                  required: 'Username is required',
+                  minLength: {
+                    value: 3,
+                    message: 'Username must be at least 3 characters'
+                  }
+                })}
+                className="input"
+                placeholder="johndoe"
+                disabled={isLoading}
+              />
+              {errors.username && (
+                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
+              )}
+            </div>
+            
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                {...register('email', { 
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: 'Invalid email address'
+                  }
+                })}
+                className="input"
+                placeholder="you@example.com"
+                disabled={isLoading}
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              )}
+            </div>
+            
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password', { 
+                    required: 'Password is required',
+                    minLength: {
+                      value: 8,
+                      message: 'Password must be at least 8 characters'
+                    }
+                  })}
+                  className="input pr-10"
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              )}
+            </div>
+            
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  {...register('confirmPassword', { 
+                    required: 'Please confirm your password',
+                    validate: value => value === password || 'Passwords do not match'
+                  })}
+                  className="input pr-10"
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+            
+            <div className="flex items-center">
+              <input
+                id="terms"
+                type="checkbox"
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                required
+              />
+              <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
+                I agree to the <a href="#" className="text-primary hover:underline">Terms of Service</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+              </label>
+            </div>
+            
+            <button 
+              type="submit" 
+              className="btn btn-primary w-full flex justify-center items-center"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></span>
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link to="/login" className="text-primary hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RegisterPage;
