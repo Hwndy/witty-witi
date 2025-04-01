@@ -11,7 +11,7 @@ import {
   getFeaturedProducts,
   getProductsByCategory
 } from '../controllers/productController.js';
-import { auth, adminOnly } from '../middleware/authMiddleware.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -50,8 +50,8 @@ router.get('/category/:category', getProductsByCategory);
 router.get('/:id', getProductById);
 
 // Admin routes
-router.post('/', auth, adminOnly, upload.single('image'), createProduct);
-router.put('/:id', auth, adminOnly, upload.single('image'), updateProduct);
-router.delete('/:id', auth, adminOnly, deleteProduct);
+router.post('/', protect, admin, upload.single('image'), createProduct);
+router.put('/:id', protect, admin, upload.single('image'), updateProduct);
+router.delete('/:id', protect, admin, deleteProduct);
 
 export default router;

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const API = axios.create({
-  baseURL: import.meta.env.PROD ? '/api' : 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api'),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -136,5 +136,11 @@ export const getDashboardStats = () =>
 
 export const getSalesReport = (params?: { startDate?: string; endDate?: string }) => 
   API.get('/dashboard/sales', { params });
+
+export const getSettings = () => 
+  API.get('/settings');
+
+export const updateSettings = (settings: any) => 
+  API.post('/settings', settings);
 
 export default API;

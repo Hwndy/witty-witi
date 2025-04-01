@@ -1,25 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminHeader from '../../components/admin/AdminHeader';
-import axios from 'axios';
+import { useSettingsStore } from '../../store/settingsStore';
+import { toast } from 'react-hot-toast';
 
-const Settings: React.FC = () => {
+
+const Settings = () => {
+  const { settings, fetchSettings, updateSettings, isLoading, error } = useSettingsStore();
+  
   const [generalSettings, setGeneralSettings] = useState({
-    storeName: 'WITTY WITI',
-    storeEmail: 'adeniji1440@gmail.com',
-    storePhone: '08096560016',
-    storeAddress: '20 Jubril Martins street, Surulere, Lagos Nigeria',
-    currencySymbol: '₦',
-    // taxRate: '5'
+    storeName: '',
+    storeEmail: '',
+    storePhone: '',
+    storeAddress: '',
+    currencySymbol: '',
+    taxRate: 5
   });
   
   const [paymentSettings, setPaymentSettings] = useState({
     enableCashOnDelivery: true,
     enableBankTransfer: true,
-    bankName: 'OPAY',
-    accountNumber: '8096560016',
-    accountName: 'Adeniji Abd Razzaq'
+    bankName: '',
+    accountNumber: '',
+    accountName: ''
   });
   
   const [notificationSettings, setNotificationSettings] = useState({
@@ -29,9 +33,24 @@ const Settings: React.FC = () => {
     newCustomerRegistration: true
   });
   
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+  
+  useEffect(() => {
+    if (settings) {
+      setGeneralSettings(settings.general);
+      setPaymentSettings(settings.payment);
+      setNotificationSettings(settings.notification);
+    }
+  }, [settings]);
+  
   const handleGeneralSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setGeneralSettings(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    setGeneralSettings(prev => ({ 
+      ...prev, 
+      [name]: type === 'number' ? parseFloat(value) : value 
+    }));
   };
   
   const handlePaymentSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,19 +69,14 @@ const Settings: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/settings', {
+      await updateSettings({
         generalSettings,
         paymentSettings,
         notificationSettings
       });
-      if (response.status === 200) {
-        alert('Settings saved successfully!');
-      } else {
-        alert('Failed to save settings.');
-      }
+      toast.success('Settings updated successfully');
     } catch (error) {
-      console.error('Error saving settings:', error);
-      alert('An error occurred while saving settings.');
+      toast.error('Failed to update settings');
     }
   };
   

@@ -17,6 +17,7 @@ import userRoutes from './routes/userRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 // Import models for initial data setup
 import User from './models/User.js';
@@ -159,6 +160,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
