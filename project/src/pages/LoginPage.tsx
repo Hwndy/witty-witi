@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import useAuthStore from '../store/authStore';
+import toast from 'react-hot-toast';
 
 interface LoginFormData {
   email: string;
@@ -14,15 +15,17 @@ const LoginPage: React.FC = () => {
   const { login, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const from = (location.state as any)?.from?.pathname || '/';
-  
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors } 
+
+  // Get redirect path and message from location state
+  const from = (location.state as any)?.from || '/';
+  const message = (location.state as any)?.message;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
   } = useForm<LoginFormData>();
-  
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
@@ -31,7 +34,7 @@ const LoginPage: React.FC = () => {
       // Error is handled in the store
     }
   };
-  
+
   return (
     <div className="py-16 bg-gray-50">
       <div className="container max-w-md mx-auto">
@@ -40,14 +43,15 @@ const LoginPage: React.FC = () => {
             <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
             <p className="text-gray-600">Sign in to your account</p>
           </div>
-          
-          {error && (
+
+          {/* Show error from auth store or message from redirect */}
+          {(error || message) && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 flex items-start">
               <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <p>{error}</p>
+              <p>{error || message}</p>
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -56,7 +60,7 @@ const LoginPage: React.FC = () => {
               <input
                 id="email"
                 type="email"
-                {...register('email', { 
+                {...register('email', {
                   required: 'Email is required',
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -71,7 +75,7 @@ const LoginPage: React.FC = () => {
                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
@@ -101,7 +105,7 @@ const LoginPage: React.FC = () => {
                 <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
@@ -113,14 +117,14 @@ const LoginPage: React.FC = () => {
                   Remember me
                 </label>
               </div>
-              
-              <a href="#" className="text-sm text-primary hover:underline">
+
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                 Forgot password?
-              </a>
+              </Link>
             </div>
-            
-            <button 
-              type="submit" 
+
+            <button
+              type="submit"
               className="btn btn-primary w-full flex justify-center items-center"
               disabled={isLoading}
             >
@@ -134,7 +138,7 @@ const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-          
+
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}

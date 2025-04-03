@@ -7,19 +7,21 @@ interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  allowedRoles = [] 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  allowedRoles = []
 }) => {
   const { isAuthenticated, user, checkAuth, isLoading } = useAuthStore();
   const location = useLocation();
-  
+
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Only check auth if not already authenticated
+    // This prevents unnecessary API calls
+    if (!isAuthenticated && !isLoading) {
       checkAuth();
     }
-  }, [isAuthenticated, checkAuth]);
-  
+  }, [isAuthenticated, isLoading, checkAuth]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -27,15 +29,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       </div>
     );
   }
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-  
-  if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.isAdmin ? 'admin' : 'user')) {
+
+  if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
-  
+
   return <>{children}</>;
 };
 

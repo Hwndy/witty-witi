@@ -22,11 +22,16 @@ import useAuthStore from './store/authStore';
 
 function App() {
   const { checkAuth } = useAuthStore();
-  
+
+  // Check authentication only once when the app starts
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-  
+    // Only check if we don't have a stored auth state
+    const state = useAuthStore.getState();
+    if (!state.isAuthenticated) {
+      checkAuth();
+    }
+  }, []);
+
   return (
     <Router>
       <Routes>
@@ -56,7 +61,7 @@ function App() {
             <AdminSettings />
           </ProtectedRoute>
         } />
-        
+
         {/* Public Routes */}
         <Route path="/" element={
           <>

@@ -30,8 +30,9 @@ const RegisterPage: React.FC = () => {
     try {
       await registerUser(data.username, data.email, data.password);
       navigate('/');
-    } catch (error) {
-      // Error is handled in the store
+    } catch (error: any) {
+      // Error is now handled in the store
+      console.error('Registration error:', error);
     }
   };
   

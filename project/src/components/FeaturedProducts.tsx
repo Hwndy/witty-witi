@@ -1,27 +1,38 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, AlertCircle } from 'lucide-react';
-import useCartStore from '../store/cartStore';
+import React, { useEffect, useState } from 'react';
 import useProductStore from '../store/productStore';
+import useCartStore from '../store/cartStore';
+import { Product } from '../types';
+import useApiStatus from '../hooks/useApiStatus';
 
 const FeaturedProducts: React.FC = () => {
   const { featuredProducts, fetchFeaturedProducts, isLoading, error } = useProductStore();
-  const addToCart = useCartStore(state => state.addItem);
-  
+  const addToCart = useCartStore((state) => state.addItem);
+  const [retryCount, setRetryCount] = useState(0);
+  const apiStatus = useApiStatus();
+
   useEffect(() => {
-    fetchFeaturedProducts();
-  }, [fetchFeaturedProducts]);
-  
+    const loadFeaturedProducts = async () => {
+      try {
+        console.log('Loading featured products, attempt:', retryCount + 1);
+        await fetchFeaturedProducts();
+      } catch (error) {
+        console.error('Error loading featured products:', error);
+        // If we've tried less than 3 times and the API is offline, retry after a delay
+        if (retryCount < 2 && apiStatus.status !== 'online') {
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, 2000); // Wait 2 seconds before retrying
+        }
+      }
+    };
+
+    loadFeaturedProducts();
+  }, [fetchFeaturedProducts, retryCount, apiStatus.status]);
+
   if (isLoading) {
     return (
       <section className="py-16">
         <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Products</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Check out our most popular tech gadgets and accessories
-            </p>
-          </div>
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
@@ -29,63 +40,63 @@ const FeaturedProducts: React.FC = () => {
       </section>
     );
   }
-  
+
+  if (error) {
+    return (
+      <section className="py-16">
+        <div className="container">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4">
+            <strong className="font-bold">Error: </strong>
+            <span className="block sm:inline">{error}</span>
+          </div>
+
+          {/* Show API status */}
+          <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded relative">
+            <strong className="font-bold">API Status: </strong>
+            <span className={`inline-block px-2 py-1 rounded-full text-xs ${apiStatus.status === 'online' ? 'bg-green-100 text-green-800' : apiStatus.status === 'checking' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+              {apiStatus.status}
+            </span>
+            {apiStatus.lastChecked && (
+              <span className="block text-xs mt-1">Last checked: {apiStatus.lastChecked.toLocaleTimeString()}</span>
+            )}
+
+            {/* Retry button */}
+            <button
+              onClick={() => setRetryCount(prev => prev + 1)}
+              className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm"
+            >
+              Retry Loading Products
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16">
       <div className="container">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Products</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Check out our most popular tech gadgets and accessories
-          </p>
-        </div>
-        
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 flex items-start">
-            <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {featuredProducts.map((product) => (
-            <div key={product.id} className="card group">
-              <div className="relative overflow-hidden">
-                <img 
-                  src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`}
-                  alt={product.name}
-                  className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <Link 
-                    to={`/products/detail/${product.id}`}
-                    className="btn bg-white text-primary hover:bg-gray-100 mx-2"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
+        <h2 className="text-3xl font-bold mb-8">Featured Products</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {featuredProducts?.map((product: Product) => (
+            <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <img
+                src={product.image}
+                alt={product.name}
+                className="w-full h-48 object-cover"
+              />
               <div className="p-4">
-                <h3 className="text-lg font-bold mb-1">{product.name}</h3>
-                <p className="text-gray-600 text-sm mb-2">{product.category}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-primary font-bold">${product.price.toFixed(2)}</span>
-                  <button 
-                    onClick={() => addToCart(product)}
-                    className="p-2 rounded-full bg-primary text-white hover:bg-opacity-90 transition-colors"
-                  >
-                    <ShoppingCart className="h-5 w-5" />
-                  </button>
-                </div>
+                <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+                <p className="text-gray-600 mb-4">${product.price}</p>
+                <button
+                  onClick={() => addToCart(product)}
+                  className="w-full bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition-colors"
+                >
+                  Add to Cart
+                </button>
               </div>
             </div>
           ))}
-        </div>
-        
-        <div className="text-center mt-12">
-          <Link to="/products" className="btn btn-primary">
-            View All Products
-          </Link>
         </div>
       </div>
     </section>

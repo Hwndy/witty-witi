@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CreditCard, MapPin, Truck, Check, AlertCircle } from 'lucide-react';
 import useCartStore from '../store/cartStore';
@@ -7,10 +7,28 @@ import useOrderStore from '../store/orderStore';
 
 const CheckoutPage: React.FC = () => {
   const { items, getTotalPrice, clearCart } = useCartStore();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, checkAuth } = useAuthStore();
   const { placeOrder, isLoading, error } = useOrderStore();
   const navigate = useNavigate();
-  
+
+  // Check authentication status when component mounts
+  useEffect(() => {
+    const verifyAuth = async () => {
+      if (!isAuthenticated && !isLoading) {
+        await checkAuth();
+        // After checking, if still not authenticated, redirect to login
+        // We need to get the latest state after the checkAuth call
+        const currentState = useAuthStore.getState();
+        if (!currentState.isAuthenticated) {
+          navigate('/login', { state: { from: '/checkout', message: 'Please log in to complete your purchase' } });
+        }
+      }
+    };
+
+    verifyAuth();
+    // Only run this effect once when the component mounts
+  }, []);
+
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -26,24 +44,43 @@ const CheckoutPage: React.FC = () => {
     expiryDate: '',
     cvv: ''
   });
-  
+
   const [step, setStep] = useState(1);
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (step < 3) {
       setStep(step + 1);
       return;
     }
-    
+
+    // Check if user is authenticated before placing order
+    if (!isAuthenticated) {
+      // Try to check authentication status again
+      await checkAuth();
+
+      // If still not authenticated, redirect to login
+      if (!isAuthenticated) {
+        navigate('/login', {
+          state: {
+            from: '/checkout',
+            message: 'Please log in to complete your purchase'
+          }
+        });
+        return;
+      }
+    }
+
     // Process order
     try {
+      console.log('Preparing to place order, authentication status:', isAuthenticated);
+
       const orderData = {
         items: items.map(item => ({
           product: item.product.id,
@@ -59,20 +96,30 @@ const CheckoutPage: React.FC = () => {
         paymentMethod: formData.paymentMethod,
         notes: ''
       };
-      
+
+      console.log('Placing order with data:', orderData);
       await placeOrder(orderData);
       clearCart();
       navigate('/checkout/success');
-    } catch (error) {
-      // Error is handled in the store
+    } catch (error: any) {
+      console.error('Error placing order:', error);
+      // Additional error handling if needed
+      if (error.response?.status === 401) {
+        navigate('/login', {
+          state: {
+            from: '/checkout',
+            message: 'Your session has expired. Please log in again to complete your purchase.'
+          }
+        });
+      }
     }
   };
-  
+
   const subtotal = getTotalPrice();
   const shipping = 0; // Free shipping
   const tax = subtotal * 0.05;
   const total = subtotal + shipping + tax;
-  
+
   if (items.length === 0) {
     return (
       <div className="py-16 container">
@@ -91,18 +138,18 @@ const CheckoutPage: React.FC = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="py-8 container">
       <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-      
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 flex items-start">
           <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
           <p>{error}</p>
         </div>
       )}
-      
+
       {/* Checkout Steps */}
       <div className="flex justify-between mb-8">
         <div className={`flex-1 text-center ${step >= 1 ? 'text-primary' : 'text-gray-400'}`}>
@@ -136,7 +183,7 @@ const CheckoutPage: React.FC = () => {
           <span className="text-sm font-medium">Review</span>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <form onSubmit={handleSubmit}>
@@ -147,7 +194,7 @@ const CheckoutPage: React.FC = () => {
                   <MapPin className="h-5 w-5 mr-2 text-primary" />
                   Shipping Information
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -178,7 +225,7 @@ const CheckoutPage: React.FC = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -209,7 +256,7 @@ const CheckoutPage: React.FC = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="mb-4">
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
                     Address*
@@ -224,7 +271,7 @@ const CheckoutPage: React.FC = () => {
                     className="input"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
@@ -269,7 +316,7 @@ const CheckoutPage: React.FC = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="mt-8 flex justify-between">
                   <Link to="/cart" className="btn btn-outline">
                     Back to Cart
@@ -280,7 +327,7 @@ const CheckoutPage: React.FC = () => {
                 </div>
               </div>
             )}
-            
+
             {/* Step 2: Payment Information */}
             {step === 2 && (
               <div className="bg-white rounded-lg shadow-md p-6">
@@ -288,7 +335,7 @@ const CheckoutPage: React.FC = () => {
                   <CreditCard className="h-5 w-5 mr-2 text-primary" />
                   Payment Information
                 </h2>
-                
+
                 <div className="mb-6">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="flex items-center">
@@ -334,7 +381,7 @@ const CheckoutPage: React.FC = () => {
                       </label>
                     </div>
                   </div>
-                  
+
                   {formData.paymentMethod === 'card' && (
                     <div className="space-y-4">
                       <div>
@@ -352,7 +399,7 @@ const CheckoutPage: React.FC = () => {
                           className="input"
                         />
                       </div>
-                      
+
                       <div>
                         <label htmlFor="cardName" className="block text-sm font-medium text-gray-700 mb-1">
                           Name on Card*
@@ -367,7 +414,7 @@ const CheckoutPage: React.FC = () => {
                           className="input"
                         />
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">
@@ -402,7 +449,7 @@ const CheckoutPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {formData.paymentMethod === 'paypal' && (
                     <div className="bg-gray-50 p-4 rounded-md">
                       <p className="text-sm text-gray-600">
@@ -410,7 +457,7 @@ const CheckoutPage: React.FC = () => {
                       </p>
                     </div>
                   )}
-                  
+
                   {formData.paymentMethod === 'cash_on_delivery' && (
                     <div className="bg-gray-50 p-4 rounded-md">
                       <p className="text-sm text-gray-600">
@@ -419,10 +466,10 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="mt-8 flex justify-between">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setStep(1)}
                     className="btn btn-outline"
                   >
@@ -434,12 +481,12 @@ const CheckoutPage: React.FC = () => {
                 </div>
               </div>
             )}
-            
+
             {/* Step 3: Order Review */}
             {step === 3 && (
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold mb-6">Order Review</h2>
-                
+
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-700 mb-2">Shipping Information</h3>
                   <div className="bg-gray-50 p-4 rounded-md">
@@ -453,7 +500,7 @@ const CheckoutPage: React.FC = () => {
                     <p className="text-gray-600">{formData.email} | {formData.phone}</p>
                   </div>
                 </div>
-                
+
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-700 mb-2">Payment Method</h3>
                   <div className="bg-gray-50 p-4 rounded-md">
@@ -475,7 +522,7 @@ const CheckoutPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-700 mb-2">Order Items</h3>
                   <div className="bg-gray-50 p-4 rounded-md">
@@ -483,7 +530,7 @@ const CheckoutPage: React.FC = () => {
                       {items.map((item) => (
                         <div key={item.product.id} className="py-3 flex justify-between">
                           <div className="flex items-center">
-                            <img 
+                            <img
                               src={item.product.image.startsWith('http') ? item.product.image : `http://localhost:5000${item.product.image}`}
                               alt={item.product.name}
                               className="h-12 w-12 object-cover rounded mr-4"
@@ -503,7 +550,7 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-700 mb-2">Shipping Method</h3>
                   <div className="bg-gray-50 p-4 rounded-md flex items-center">
@@ -511,17 +558,17 @@ const CheckoutPage: React.FC = () => {
                     <span>Standard Shipping (Free)</span>
                   </div>
                 </div>
-                
+
                 <div className="mt-8 flex justify-between">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setStep(2)}
                     className="btn btn-outline"
                   >
                     Back to Payment
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="btn btn-primary flex items-center"
                     disabled={isLoading}
                   >
@@ -539,11 +586,11 @@ const CheckoutPage: React.FC = () => {
             )}
           </form>
         </div>
-        
+
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
             <h2 className="text-lg font-bold mb-4">Order Summary</h2>
-            
+
             <div className="space-y-4 mb-6">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
@@ -557,7 +604,7 @@ const CheckoutPage: React.FC = () => {
                 <span className="text-gray-600">Tax</span>
                 <span className="font-medium">${tax.toFixed(2)}</span>
               </div>
-              
+
               <div className="border-t pt-4">
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
@@ -566,7 +613,7 @@ const CheckoutPage: React.FC = () => {
                 <p className="text-xs text-gray-500 mt-1">Including VAT</p>
               </div>
             </div>
-            
+
             <div className="border-t pt-4">
               <div className="flex items-center mb-2">
                 <Check className="h-5 w-5 text-green-500 mr-2" />
