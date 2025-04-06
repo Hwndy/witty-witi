@@ -68,21 +68,32 @@ const useProductStore = create<ProductState>((set) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await getFeaturedProducts();
+      
       if (!response.data) throw new Error('No data received from server');
-      set({ featuredProducts: response.data });
-      console.log('Featured products loaded successfully:', response.data.length, 'items');
+      
+      // Ensure the response data is an array
+      const products = Array.isArray(response.data) ? response.data : 
+                      (response.data.products || response.data.data || []);
+      
+      set({ featuredProducts: products });
+      console.log('Featured products loaded successfully:', products.length, 'items');
     } catch (error: any) {
-      // More robust error handling
       let errorMessage = 'Failed to fetch featured products';
-
+      
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-
+      
       set({ error: errorMessage });
       console.error('Error in fetchFeaturedProducts:', error);
+      
+      // If in development or API is down, use mock data
+      if (import.meta.env.DEV || error.code === 'ERR_NETWORK') {
+        const { mockFeaturedProducts } = await import('../api');
+        set({ featuredProducts: mockFeaturedProducts });
+      }
     } finally {
       set({ isLoading: false });
     }

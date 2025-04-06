@@ -15,7 +15,9 @@ const useApiStatus = (interval: number = 30000) => {
     try {
       setStatus('checking');
       const result = await checkApiHealth();
-      if (result.status === 'online') {
+      
+      // Consider both online status and successful response
+      if (result.status === 'online' || result.data?.status === 'success') {
         setStatus('online');
         setError(null);
       } else {
@@ -25,6 +27,7 @@ const useApiStatus = (interval: number = 30000) => {
     } catch (err) {
       setStatus('offline');
       setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error('API health check failed:', err);
     } finally {
       setLastChecked(new Date());
     }
@@ -50,3 +53,4 @@ const useApiStatus = (interval: number = 30000) => {
 };
 
 export default useApiStatus;
+

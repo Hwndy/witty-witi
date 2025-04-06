@@ -20,21 +20,13 @@ console.log('API Base URL:', API_BASE_URL);
 // Request interceptor with improved token handling
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-
-  // Log for debugging
-  console.log('Making request to:', config.url);
-  console.log('Token exists:', !!token);
-
+  const publicEndpoints = ['/health', '/products/featured', '/products'];
+  
   if (token) {
-    // Ensure headers object exists
     config.headers = config.headers || {};
-
-    // Set Authorization header with Bearer token
     config.headers.Authorization = `Bearer ${token}`;
-
-    // Log the authorization header (for debugging only, remove in production)
-    console.log('Authorization header set:', `Bearer ${token.substring(0, 10)}...`);
-  } else {
+  } else if (!publicEndpoints.some(endpoint => config.url?.includes(endpoint))) {
+    // Only log warning for non-public endpoints
     console.warn('No authentication token found for request to:', config.url);
   }
 
