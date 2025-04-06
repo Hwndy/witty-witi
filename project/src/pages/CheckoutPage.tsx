@@ -65,10 +65,12 @@ const CheckoutPage: React.FC = () => {
     try {
       const orderData = {
         items: items.map(item => ({
-          product: item.product.id,
+          productId: item.product.id, // Changed from product to productId
+          product: item.product.id,   // Keep this for backward compatibility
           name: item.product.name,
           price: item.product.price,
-          quantity: item.quantity
+          quantity: item.quantity,
+          image: item.product.image
         })),
         totalPrice: getTotalPrice() * 1.05, // Including tax
         shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
@@ -79,12 +81,17 @@ const CheckoutPage: React.FC = () => {
         notes: formData.notes || ''
       };
 
+      console.log('Submitting order with data:', orderData);
       const order = await placeOrder(orderData);
-      clearCart();
-      navigate('/checkout/success', { state: { orderId: order.id } });
+      
+      if (order) {
+        clearCart();
+        navigate('/checkout/success', { state: { orderId: order.id } });
+      }
     } catch (error: any) {
       console.error('Error placing order:', error);
-      toast.error(error.message || 'Failed to place order. Please try again.');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to place order';
+      toast.error(errorMessage);
       
       if (error.response?.status === 401) {
         navigate('/login', {
@@ -524,7 +531,7 @@ const CheckoutPage: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <p className="font-medium">
-                              ${(item.product.price * item.quantity).toFixed(2)}
+                              ₦{(item.product.price * item.quantity).toFixed(2)}
                             </p>
                           </div>
                         </div>

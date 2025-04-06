@@ -62,8 +62,13 @@ const useOrderStore = create<OrderState>((set) => ({
   placeOrder: async (orderData) => {
     try {
       set({ isLoading: true, error: null });
+      console.log('Placing order with data:', orderData);
 
       const response = await createOrder(orderData);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to create order');
+      }
 
       set((state) => ({
         orders: [response.data.order, ...state.orders],

@@ -166,7 +166,7 @@ const ProductDetailPage: React.FC = () => {
             </div>
             
             <div className="text-2xl font-bold text-primary mb-6">
-              ${currentProduct.price.toFixed(2)}
+              ₦{currentProduct.price.toFixed(2)}
             </div>
             
             <p className="text-gray-700 mb-6">

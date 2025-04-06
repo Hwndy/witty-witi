@@ -152,7 +152,7 @@ const ProductsPage: React.FC = () => {
                   <h3 className="text-lg font-bold mb-1">{product.name}</h3>
                   <p className="text-gray-600 text-sm mb-2 capitalize">{product.category}</p>
                   <div className="flex justify-between items-center">
-                    <span className="text-primary font-bold">${product.price.toFixed(2)}</span>
+                    <span className="text-primary font-bold">₦{product.price.toFixed(2)}</span>
                     <button 
                       onClick={() => addToCart(product)}
                       className="p-2 rounded-full bg-primary text-white hover:bg-opacity-90 transition-colors"

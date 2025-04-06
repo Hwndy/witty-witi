@@ -87,7 +87,7 @@ const FeaturedProducts: React.FC = () => {
               />
               <div className="p-4">
                 <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
-                <p className="text-gray-600 mb-4">${product.price}</p>
+                <p className="text-gray-600 mb-4">₦{product.price}</p>
                 <button
                   onClick={() => addToCart(product)}
                   className="w-full bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition-colors"
