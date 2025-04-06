@@ -65,31 +65,44 @@ const useOrderStore = create<OrderState>((set) => ({
       console.log('Placing order with data:', orderData);
 
       const response = await createOrder(orderData);
-      
-      if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to create order');
+
+      // Check if the response has the expected structure
+      if (!response.data || !response.data.success) {
+        const errorMsg = response.data?.message || 'Failed to create order';
+        console.error('Order creation failed:', errorMsg);
+        throw new Error(errorMsg);
       }
 
+      // Successfully created order
+      const order = response.data.order;
+      console.log('Order created successfully:', order);
+
       set((state) => ({
-        orders: [response.data.order, ...state.orders],
-        currentOrder: response.data.order
+        orders: [order, ...state.orders],
+        currentOrder: order
       }));
 
-      return response.data.order;
+      return order;
     } catch (error: any) {
       console.error('Error in placeOrder:', error);
-      
-      const errorMessage = error.response?.data?.message 
-        || error.response?.data?.error 
-        || error.message 
-        || 'Failed to place order';
-      
+
+      // Extract error message from various possible sources
+      let errorMessage = 'Failed to place order';
+
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+
       set({
         error: errorMessage,
         isLoading: false
       });
 
-      throw new Error(errorMessage);
+      throw error;
     } finally {
       set({ isLoading: false });
     }

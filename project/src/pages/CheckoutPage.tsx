@@ -4,7 +4,7 @@ import { CreditCard, MapPin, Truck, Check, AlertCircle } from 'lucide-react';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import useOrderStore from '../store/orderStore';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 
 const CheckoutPage: React.FC = () => {
   const { items, getTotalPrice, clearCart } = useCartStore();
@@ -63,14 +63,22 @@ const CheckoutPage: React.FC = () => {
     }
 
     try {
+      console.log('Creating order with items:', items);
+
+      // Validate items before sending
+      if (!items || items.length === 0) {
+        toast.error('Your cart is empty. Please add items before checkout.');
+        navigate('/products');
+        return;
+      }
+
+      // Create order data with proper structure
       const orderData = {
         items: items.map(item => ({
-          productId: item.product.id, // Changed from product to productId
-          product: item.product.id,   // Keep this for backward compatibility
+          product: item.product.id, // This is the required field for MongoDB
           name: item.product.name,
           price: item.product.price,
-          quantity: item.quantity,
-          image: item.product.image
+          quantity: item.quantity
         })),
         totalPrice: getTotalPrice() * 1.05, // Including tax
         shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
@@ -83,7 +91,7 @@ const CheckoutPage: React.FC = () => {
 
       console.log('Submitting order with data:', orderData);
       const order = await placeOrder(orderData);
-      
+
       if (order) {
         clearCart();
         navigate('/checkout/success', { state: { orderId: order.id } });
@@ -92,7 +100,7 @@ const CheckoutPage: React.FC = () => {
       console.error('Error placing order:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to place order';
       toast.error(errorMessage);
-      
+
       if (error.response?.status === 401) {
         navigate('/login', {
           state: {

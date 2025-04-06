@@ -20,7 +20,7 @@ console.log('API Base URL:', API_BASE_URL);
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   const publicEndpoints = ['/health', '/products/featured', '/products'];
-  
+
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
@@ -217,12 +217,17 @@ export const deleteProduct = (id: string) =>
 export const createOrder = async (orderData: any) => {
   try {
     console.log('Placing order with authentication token');
+    console.log('Order data being sent:', JSON.stringify(orderData, null, 2));
     const response = await API.post('/orders', orderData);
-    return response.data;
+    return response;
   } catch (error: any) {
     console.error('Error in createOrder:', error);
     if (error.response?.status === 401) {
       throw new Error('Authentication required to place order');
+    }
+    if (error.response?.data?.error) {
+      console.error('Server error details:', error.response.data);
+      throw new Error(error.response.data.message || error.response.data.error);
     }
     throw error;
   }
