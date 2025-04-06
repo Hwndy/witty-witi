@@ -17,6 +17,7 @@ import AdminProducts from './pages/admin/Products';
 import AdminOrders from './pages/admin/Orders';
 import AdminCustomers from './pages/admin/Customers';
 import AdminSettings from './pages/admin/Settings';
+import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import useAuthStore from './store/authStore';
 
@@ -137,6 +138,14 @@ function App() {
           <>
             <Navbar />
             <AboutPage />
+            <Footer />
+          </>
+        } />
+        {/* 404 Page - This will catch all unmatched routes */}
+        <Route path="*" element={
+          <>
+            <Navbar />
+            <NotFoundPage />
             <Footer />
           </>
         } />
