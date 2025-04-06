@@ -122,7 +122,7 @@ const CartPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
-                <span className="font-medium">${getTotalPrice().toFixed(2)}</span>
+                <span className="font-medium">₦{getTotalPrice().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping</span>
@@ -130,13 +130,13 @@ const CartPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax</span>
-                <span className="font-medium">${(getTotalPrice() * 0.05).toFixed(2)}</span>
+                <span className="font-medium">₦{(getTotalPrice() * 0.05).toFixed(2)}</span>
               </div>
               
               <div className="border-t pt-4">
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span className="text-primary">${(getTotalPrice() * 1.05).toFixed(2)}</span>
+                  <span className="text-primary">₦{(getTotalPrice() * 1.05).toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Including VAT</p>
               </div>
