@@ -81,15 +81,14 @@ const CheckoutPage: React.FC = () => {
       // Create order data with proper structure
       const orderData = {
         items: items.map(item => {
-          // Extract the MongoDB ObjectId from the product
-          const productId = item.product._id || item.product.id;
+          // Get the product ID - ensure we always have a valid ID
+          const productId = item.product.id;
 
           console.log(`Product ID for ${item.product.name}:`, productId);
 
           return {
-            // Include both id formats to ensure compatibility
+            // Always use 'product' as the key for the product ID
             product: productId,
-            productId: productId, // For backward compatibility
             name: item.product.name,
             price: item.product.price,
             quantity: item.quantity,

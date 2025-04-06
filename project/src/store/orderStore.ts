@@ -78,7 +78,7 @@ const useOrderStore = create<OrderState>((set) => ({
 
       // Format the order to match our frontend model
       const formattedOrder = {
-        id: order.id || order._id,
+        id: order.id,
         totalPrice: order.totalPrice,
         status: order.status || 'pending',
         createdAt: order.createdAt || new Date().toISOString(),

@@ -264,8 +264,12 @@ const createMockOrder = (orderData: any) => {
   // Create a complete mock order
   const mockOrder = {
     id: orderId,
-    _id: orderId,
-    items: orderData.items,
+    // Ensure each item has a product ID
+    items: orderData.items.map((item: any) => ({
+      ...item,
+      // Make sure product ID is always present
+      product: item.product || item.productId || 'unknown_product_id'
+    })),
     totalPrice: orderData.totalPrice,
     shippingAddress: orderData.shippingAddress,
     customerName: orderData.customerName,
@@ -307,8 +311,8 @@ export const createOrder = async (orderData: any) => {
       ...orderData,
       items: orderData.items.map((item: any) => ({
         ...item,
-        // Ensure product is a string (MongoDB ObjectId)
-        product: typeof item.product === 'string' ? item.product : item.product._id || item.product.id
+        // Ensure product is a string (ID)
+        product: typeof item.product === 'string' ? item.product : item.product.id
       }))
     };
 
@@ -378,7 +382,7 @@ const getMockOrderById = (id: string) => {
   try {
     const ordersStr = localStorage.getItem('mockOrders');
     const orders = ordersStr ? JSON.parse(ordersStr) : [];
-    const order = orders.find((o: any) => o.id === id || o._id === id);
+    const order = orders.find((o: any) => o.id === id);
 
     if (order) {
       console.log('Found mock order by ID:', id);
@@ -415,14 +419,14 @@ const updateMockOrderStatus = (id: string, status: string) => {
     const ordersStr = localStorage.getItem('mockOrders');
     const orders = ordersStr ? JSON.parse(ordersStr) : [];
     const updatedOrders = orders.map((order: any) => {
-      if (order.id === id || order._id === id) {
+      if (order.id === id) {
         return { ...order, status, updatedAt: new Date().toISOString() };
       }
       return order;
     });
 
     localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
-    const updatedOrder = updatedOrders.find((o: any) => o.id === id || o._id === id);
+    const updatedOrder = updatedOrders.find((o: any) => o.id === id);
     console.log('Updated mock order status:', id, status);
     return { data: updatedOrder };
   } catch (error) {
@@ -437,14 +441,14 @@ const updateMockPaymentStatus = (id: string, paymentStatus: string) => {
     const ordersStr = localStorage.getItem('mockOrders');
     const orders = ordersStr ? JSON.parse(ordersStr) : [];
     const updatedOrders = orders.map((order: any) => {
-      if (order.id === id || order._id === id) {
+      if (order.id === id) {
         return { ...order, paymentStatus, updatedAt: new Date().toISOString() };
       }
       return order;
     });
 
     localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
-    const updatedOrder = updatedOrders.find((o: any) => o.id === id || o._id === id);
+    const updatedOrder = updatedOrders.find((o: any) => o.id === id);
     console.log('Updated mock order payment status:', id, paymentStatus);
     return { data: updatedOrder };
   } catch (error) {
@@ -459,14 +463,14 @@ const cancelMockOrder = (id: string) => {
     const ordersStr = localStorage.getItem('mockOrders');
     const orders = ordersStr ? JSON.parse(ordersStr) : [];
     const updatedOrders = orders.map((order: any) => {
-      if (order.id === id || order._id === id) {
+      if (order.id === id) {
         return { ...order, status: 'cancelled', updatedAt: new Date().toISOString() };
       }
       return order;
     });
 
     localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
-    const updatedOrder = updatedOrders.find((o: any) => o.id === id || o._id === id);
+    const updatedOrder = updatedOrders.find((o: any) => o.id === id);
     console.log('Cancelled mock order:', id);
     return { data: updatedOrder };
   } catch (error) {
