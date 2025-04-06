@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate, Navigate } from 'react-router-dom';
 import { ShoppingCart, ChevronRight, Star, Truck, Shield, RotateCcw, AlertCircle } from 'lucide-react';
 import useCartStore from '../store/cartStore';
 import useProductStore from '../store/productStore';
@@ -8,6 +8,7 @@ import useAuthStore from '../store/authStore';
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
@@ -17,14 +18,29 @@ const ProductDetailPage: React.FC = () => {
   const { productReviews, fetchProductReviews, addReview, isLoading: reviewsLoading, error: reviewsError } = useReviewStore();
   const { isAuthenticated, user } = useAuthStore();
   const addToCart = useCartStore(state => state.addItem);
-  
+
   useEffect(() => {
-    if (id) {
-      fetchProductById(id);
-      fetchProductReviews(id);
+    if (!id) {
+      navigate('/products');
+      return;
     }
-  }, [id, fetchProductById, fetchProductReviews]);
-  
+
+    const loadProductData = async () => {
+      try {
+        await fetchProductById(id);
+        await fetchProductReviews(id);
+      } catch (error) {
+        console.error('Error loading product data:', error);
+      }
+    };
+
+    loadProductData();
+  }, [id, fetchProductById, fetchProductReviews, navigate]);
+
+  if (!id) {
+    return <Navigate to="/products" replace />;
+  }
+
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     if (value > 0 && currentProduct && value <= currentProduct.stock) {

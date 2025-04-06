@@ -50,15 +50,23 @@ const useProductStore = create<ProductState>((set) => ({
     }
   },
 
-  fetchProductById: async (id) => {
+  fetchProductById: async (id: string) => {
+    if (!id) {
+      set({ error: 'Product ID is required' });
+      return;
+    }
+
     try {
       set({ isLoading: true, error: null });
       const response = await getProductById(id);
+      if (!response.data) {
+        throw new Error('Product not found');
+      }
       set({ currentProduct: response.data });
     } catch (error: any) {
-      set({
-        error: error.response?.data?.message || 'Failed to fetch product details'
-      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch product details';
+      set({ error: errorMessage, currentProduct: null });
+      throw error;
     } finally {
       set({ isLoading: false });
     }

@@ -29,15 +29,19 @@ const useReviewStore = create<ReviewState>((set) => ({
   isLoading: false,
   error: null,
   
-  fetchProductReviews: async (productId) => {
+  fetchProductReviews: async (productId: string) => {
+    if (!productId) {
+      set({ error: 'Product ID is required', productReviews: [] });
+      return;
+    }
+
     try {
       set({ isLoading: true, error: null });
       const response = await getProductReviews(productId);
-      set({ productReviews: response.data });
+      set({ productReviews: response.data || [] });
     } catch (error: any) {
-      set({ 
-        error: error.response?.data?.message || 'Failed to fetch product reviews' 
-      });
+      const errorMessage = error.response?.data?.message || 'Failed to fetch product reviews';
+      set({ error: errorMessage, productReviews: [] });
     } finally {
       set({ isLoading: false });
     }
