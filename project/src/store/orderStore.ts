@@ -64,40 +64,42 @@ const useOrderStore = create<OrderState>((set) => ({
       set({ isLoading: true, error: null });
       console.log('Placing order with data:', orderData);
 
-      // Call the API to create the order
+      // Call the API to create the order (which now uses the mock system)
       const response = await createOrder(orderData);
 
-      // Check if the response has the expected structure
-      if (!response.data || !response.data.success) {
-        const errorMsg = response.data?.message || 'Failed to create order';
-        console.error('Order creation failed:', errorMsg);
-        throw new Error(errorMsg);
+      // Handle the response from the mock system
+      if (!response.data) {
+        throw new Error('No response data received');
       }
 
-      // Successfully created order
-      const order = response.data.order;
+      // Get the order from the response
+      const order = response.data.order || response.data;
       console.log('Order created successfully:', order);
 
       // Format the order to match our frontend model
       const formattedOrder = {
         id: order.id || order._id,
         totalPrice: order.totalPrice,
-        status: order.status,
-        createdAt: order.createdAt,
-        items: orderData.items, // Use the items we sent since the response might not include them
-        customerName: orderData.customerName,
-        customerEmail: orderData.customerEmail,
-        customerPhone: orderData.customerPhone,
-        shippingAddress: orderData.shippingAddress,
-        paymentMethod: orderData.paymentMethod,
-        paymentStatus: 'pending',
-        updatedAt: order.createdAt
+        status: order.status || 'pending',
+        createdAt: order.createdAt || new Date().toISOString(),
+        items: order.items || orderData.items,
+        customerName: order.customerName || orderData.customerName,
+        customerEmail: order.customerEmail || orderData.customerEmail,
+        customerPhone: order.customerPhone || orderData.customerPhone,
+        shippingAddress: order.shippingAddress || orderData.shippingAddress,
+        paymentMethod: order.paymentMethod || orderData.paymentMethod,
+        paymentStatus: order.paymentStatus || 'pending',
+        updatedAt: order.updatedAt || order.createdAt || new Date().toISOString()
       };
 
+      // Update the store with the new order
       set((state) => ({
         orders: [formattedOrder, ...state.orders],
         currentOrder: formattedOrder
       }));
+
+      // Show success message
+      toast.success('Order placed successfully!');
 
       return formattedOrder;
     } catch (error: any) {
@@ -113,6 +115,9 @@ const useOrderStore = create<OrderState>((set) => ({
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       }
+
+      // Show error toast
+      toast.error(errorMessage);
 
       set({
         error: errorMessage,

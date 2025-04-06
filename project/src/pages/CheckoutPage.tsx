@@ -72,6 +72,9 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
+      // Show loading toast
+      toast.loading('Processing your order...', { id: 'order-processing' });
+
       // Log the items to debug
       console.log('Cart items before mapping:', JSON.stringify(items, null, 2));
 
@@ -79,16 +82,18 @@ const CheckoutPage: React.FC = () => {
       const orderData = {
         items: items.map(item => {
           // Extract the MongoDB ObjectId from the product
-          // The backend expects a valid MongoDB ObjectId
           const productId = item.product._id || item.product.id;
 
           console.log(`Product ID for ${item.product.name}:`, productId);
 
           return {
-            product: productId, // This is the required field for MongoDB
+            // Include both id formats to ensure compatibility
+            product: productId,
+            productId: productId, // For backward compatibility
             name: item.product.name,
             price: item.product.price,
-            quantity: item.quantity
+            quantity: item.quantity,
+            image: item.product.image // Include image for display purposes
           };
         }),
         totalPrice: getTotalPrice() * 1.05, // Including tax
@@ -101,17 +106,31 @@ const CheckoutPage: React.FC = () => {
       };
 
       console.log('Submitting order with data:', orderData);
+
+      // Place the order using the mock system
       const order = await placeOrder(orderData);
 
+      // Dismiss loading toast
+      toast.dismiss('order-processing');
+
       if (order) {
+        // Clear the cart
         clearCart();
+
+        // Navigate to success page
         navigate('/checkout/success', { state: { orderId: order.id } });
       }
     } catch (error: any) {
       console.error('Error placing order:', error);
+
+      // Dismiss loading toast
+      toast.dismiss('order-processing');
+
+      // Show error toast
       const errorMessage = error.response?.data?.message || error.message || 'Failed to place order';
       toast.error(errorMessage);
 
+      // Handle authentication errors
       if (error.response?.status === 401) {
         navigate('/login', {
           state: {
