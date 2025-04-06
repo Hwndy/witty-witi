@@ -63,37 +63,28 @@ const useOrderStore = create<OrderState>((set) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // Check if token exists before making the request
-      const token = localStorage.getItem('token');
-      if (!token) {
-        set({ error: 'Authentication required. Please log in to place an order.' });
-        throw new Error('Authentication required');
-      }
-
-      console.log('Placing order with authentication token');
       const response = await createOrder(orderData);
 
       set((state) => ({
-        orders: [response.data, ...state.orders],
-        currentOrder: response.data
+        orders: [response.data.order, ...state.orders],
+        currentOrder: response.data.order
       }));
 
-      return response.data;
+      return response.data.order;
     } catch (error: any) {
       console.error('Error in placeOrder:', error);
+      
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.error 
+        || error.message 
+        || 'Failed to place order';
+      
+      set({
+        error: errorMessage,
+        isLoading: false
+      });
 
-      // Handle different error types
-      if (error.response?.status === 401) {
-        set({ error: 'Your session has expired. Please log in again.' });
-        // Clear invalid token
-        localStorage.removeItem('token');
-      } else {
-        set({
-          error: error.response?.data?.message || error.message || 'Failed to place order'
-        });
-      }
-
-      throw error;
+      throw new Error(errorMessage);
     } finally {
       set({ isLoading: false });
     }

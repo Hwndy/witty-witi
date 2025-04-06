@@ -4,6 +4,7 @@ import { CreditCard, MapPin, Truck, Check, AlertCircle } from 'lucide-react';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import useOrderStore from '../store/orderStore';
+import { toast } from 'react-toastify';
 
 const CheckoutPage: React.FC = () => {
   const { items, getTotalPrice, clearCart } = useCartStore();
@@ -42,7 +43,8 @@ const CheckoutPage: React.FC = () => {
     cardNumber: '',
     cardName: '',
     expiryDate: '',
-    cvv: ''
+    cvv: '',
+    notes: ''
   });
 
   const [step, setStep] = useState(1);
@@ -60,27 +62,7 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Check if user is authenticated before placing order
-    if (!isAuthenticated) {
-      // Try to check authentication status again
-      await checkAuth();
-
-      // If still not authenticated, redirect to login
-      if (!isAuthenticated) {
-        navigate('/login', {
-          state: {
-            from: '/checkout',
-            message: 'Please log in to complete your purchase'
-          }
-        });
-        return;
-      }
-    }
-
-    // Process order
     try {
-      console.log('Preparing to place order, authentication status:', isAuthenticated);
-
       const orderData = {
         items: items.map(item => ({
           product: item.product.id,
@@ -94,21 +76,21 @@ const CheckoutPage: React.FC = () => {
         customerEmail: formData.email,
         customerPhone: formData.phone,
         paymentMethod: formData.paymentMethod,
-        notes: ''
+        notes: formData.notes || ''
       };
 
-      console.log('Placing order with data:', orderData);
-      await placeOrder(orderData);
+      const order = await placeOrder(orderData);
       clearCart();
-      navigate('/checkout/success');
+      navigate('/checkout/success', { state: { orderId: order.id } });
     } catch (error: any) {
       console.error('Error placing order:', error);
-      // Additional error handling if needed
+      toast.error(error.message || 'Failed to place order. Please try again.');
+      
       if (error.response?.status === 401) {
         navigate('/login', {
           state: {
             from: '/checkout',
-            message: 'Your session has expired. Please log in again to complete your purchase.'
+            message: 'Please log in to complete your purchase'
           }
         });
       }
