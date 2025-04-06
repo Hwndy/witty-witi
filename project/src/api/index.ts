@@ -1,8 +1,7 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// Define the API base URL based on environment
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://witty-witti-backend.onrender.com/api';
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +9,7 @@ const API = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 30000, // Increased timeout
+  timeout: 30000,
   withCredentials: true
 });
 
@@ -215,8 +214,19 @@ export const deleteProduct = (id: string) =>
   API.delete(`/products/${id}`);
 
 // Order endpoints
-export const createOrder = (orderData: any) =>
-  API.post('/orders', orderData);
+export const createOrder = async (orderData: any) => {
+  try {
+    console.log('Placing order with authentication token');
+    const response = await API.post('/orders', orderData);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error in createOrder:', error);
+    if (error.response?.status === 401) {
+      throw new Error('Authentication required to place order');
+    }
+    throw error;
+  }
+};
 
 export const getOrders = () =>
   API.get('/orders');

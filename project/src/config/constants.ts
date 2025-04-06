@@ -9,3 +9,7 @@ export const ITEMS_PER_PAGE = 12;
 export const SUPPORTED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+export const DEFAULT_PRODUCT_IMAGE = 'https://res.cloudinary.com/your-cloud-name/image/upload/v1/placeholder/product';
+// or
+export const DEFAULT_PRODUCT_IMAGE = '/assets/placeholder-product.png'; // Local fallback
