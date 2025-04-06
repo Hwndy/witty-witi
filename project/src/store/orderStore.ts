@@ -64,6 +64,7 @@ const useOrderStore = create<OrderState>((set) => ({
       set({ isLoading: true, error: null });
       console.log('Placing order with data:', orderData);
 
+      // Call the API to create the order
       const response = await createOrder(orderData);
 
       // Check if the response has the expected structure
@@ -77,12 +78,28 @@ const useOrderStore = create<OrderState>((set) => ({
       const order = response.data.order;
       console.log('Order created successfully:', order);
 
+      // Format the order to match our frontend model
+      const formattedOrder = {
+        id: order.id || order._id,
+        totalPrice: order.totalPrice,
+        status: order.status,
+        createdAt: order.createdAt,
+        items: orderData.items, // Use the items we sent since the response might not include them
+        customerName: orderData.customerName,
+        customerEmail: orderData.customerEmail,
+        customerPhone: orderData.customerPhone,
+        shippingAddress: orderData.shippingAddress,
+        paymentMethod: orderData.paymentMethod,
+        paymentStatus: 'pending',
+        updatedAt: order.createdAt
+      };
+
       set((state) => ({
-        orders: [order, ...state.orders],
-        currentOrder: order
+        orders: [formattedOrder, ...state.orders],
+        currentOrder: formattedOrder
       }));
 
-      return order;
+      return formattedOrder;
     } catch (error: any) {
       console.error('Error in placeOrder:', error);
 

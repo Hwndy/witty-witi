@@ -1,5 +1,6 @@
 export interface Product {
   id: string;
+  _id?: string; // MongoDB ObjectId
   name: string;
   price: number;
   category: string;

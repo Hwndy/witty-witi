@@ -72,14 +72,25 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
+      // Log the items to debug
+      console.log('Cart items before mapping:', JSON.stringify(items, null, 2));
+
       // Create order data with proper structure
       const orderData = {
-        items: items.map(item => ({
-          product: item.product.id, // This is the required field for MongoDB
-          name: item.product.name,
-          price: item.product.price,
-          quantity: item.quantity
-        })),
+        items: items.map(item => {
+          // Extract the MongoDB ObjectId from the product
+          // The backend expects a valid MongoDB ObjectId
+          const productId = item.product._id || item.product.id;
+
+          console.log(`Product ID for ${item.product.name}:`, productId);
+
+          return {
+            product: productId, // This is the required field for MongoDB
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity
+          };
+        }),
         totalPrice: getTotalPrice() * 1.05, // Including tax
         shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
         customerName: `${formData.firstName} ${formData.lastName}`,
