@@ -78,24 +78,19 @@ const CheckoutPage: React.FC = () => {
       // Log the items to debug
       console.log('Cart items before mapping:', JSON.stringify(items, null, 2));
 
-      // Create order data with proper structure
+      // Create a complete order object with all necessary data
       const orderData = {
-        items: items.map(item => {
-          // Get the product ID - ensure we always have a valid ID
-          const productId = item.product.id;
-
-          console.log(`Product ID for ${item.product.name}:`, productId);
-
-          return {
-            // Always use 'product' as the key for the product ID
-            product: productId,
-            productId: productId, // Include both for compatibility
-            name: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity,
-            image: item.product.image // Include image for display purposes
-          };
-        }),
+        // Save the complete cart items with all product data
+        items: items.map(item => ({
+          // Include the full product object for reference
+          product: item.product.id,
+          productId: item.product.id,
+          productData: item.product, // Keep the full product data
+          name: item.product.name,
+          price: item.product.price,
+          quantity: item.quantity,
+          image: item.product.image
+        })),
         totalPrice: getTotalPrice() * 1.05, // Including tax
         shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
         customerName: `${formData.firstName} ${formData.lastName}`,
@@ -107,18 +102,28 @@ const CheckoutPage: React.FC = () => {
 
       console.log('Submitting order with data:', orderData);
 
-      // Place the order using the mock system
-      const order = await placeOrder(orderData);
+      try {
+        // Place the order using the mock system
+        const order = await placeOrder(orderData);
 
-      // Dismiss loading toast
-      toast.dismiss('order-processing');
+        // Dismiss loading toast
+        toast.dismiss('order-processing');
 
-      if (order) {
-        // Clear the cart
-        clearCart();
+        if (order) {
+          // Clear the cart
+          clearCart();
 
-        // Navigate to success page
-        navigate('/checkout/success', { state: { orderId: order.id } });
+          // Navigate to success page
+          navigate('/checkout/success', { state: { orderId: order.id } });
+        }
+      } catch (orderError) {
+        // Dismiss loading toast
+        toast.dismiss('order-processing');
+
+        // Show error toast
+        toast.error('Failed to place order. Please try again.');
+
+        console.error('Error placing order:', orderError);
       }
     } catch (error: any) {
       console.error('Error placing order:', error);
