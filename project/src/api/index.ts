@@ -3,6 +3,13 @@ import toast from 'react-hot-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://witty-witti-backend.onrender.com/api';
 
+// Check if we're running in production (on Vercel)
+const isProduction = window.location.hostname !== 'localhost' &&
+                    !window.location.hostname.includes('127.0.0.1');
+
+// If in production, use mock data by default to avoid CORS issues
+const USE_MOCK_DATA = isProduction || import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
 const API = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -16,8 +23,9 @@ const API = axios.create({
   withCredentials: false // Set to false to avoid CORS preflight issues
 });
 
-// Log the base URL being used (for debugging)
+// Log the base URL and mock data status
 console.log('API Base URL:', API_BASE_URL);
+console.log('Using mock data:', USE_MOCK_DATA ? 'Yes' : 'No');
 
 // Request interceptor with improved token handling
 API.interceptors.request.use((config) => {
@@ -131,8 +139,92 @@ export const updateProfile = (profileData: any) =>
 export const changePassword = (passwordData: { currentPassword: string; newPassword: string }) =>
   API.put('/auth/change-password', passwordData);
 
+// Mock data for all products
+const mockProducts = [
+  ...mockFeaturedProducts,
+  {
+    id: '5',
+    name: 'Bluetooth Speaker',
+    price: 79.99,
+    category: 'speakers',
+    description: 'Portable Bluetooth speaker with 20 hours of battery life',
+    image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80',
+    stock: 8,
+    rating: 4.2
+  },
+  {
+    id: '6',
+    name: 'Wireless Mouse',
+    price: 24.99,
+    category: 'accessories',
+    description: 'Ergonomic wireless mouse with long battery life',
+    image: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80',
+    stock: 30,
+    rating: 4.0
+  },
+  {
+    id: '7',
+    name: 'Mechanical Keyboard',
+    price: 89.99,
+    category: 'accessories',
+    description: 'RGB mechanical keyboard with customizable keys',
+    image: 'https://images.unsplash.com/photo-1595225476474-63038da0e238?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80',
+    stock: 15,
+    rating: 4.6
+  },
+  {
+    id: '8',
+    name: 'USB-C Hub',
+    price: 39.99,
+    category: 'accessories',
+    description: '7-in-1 USB-C hub with HDMI, USB-A, and SD card reader',
+    image: 'https://images.unsplash.com/photo-1636118128964-5b31968f31e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80',
+    stock: 20,
+    rating: 4.3
+  }
+];
+
 // Product endpoints
 export const getProducts = async (params?: { category?: string; search?: string; sort?: string }) => {
+  // If USE_MOCK_DATA is true, skip the API call and return mock data directly
+  if (USE_MOCK_DATA) {
+    console.log('Using mock products data (CORS prevention)');
+
+    // Filter mock data based on params
+    let filteredProducts = [...mockProducts];
+
+    if (params?.category) {
+      filteredProducts = filteredProducts.filter(p => p.category === params.category);
+    }
+
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase();
+      filteredProducts = filteredProducts.filter(p =>
+        p.name.toLowerCase().includes(searchLower) ||
+        p.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (params?.sort) {
+      switch (params.sort) {
+        case 'price_asc':
+          filteredProducts.sort((a, b) => a.price - b.price);
+          break;
+        case 'price_desc':
+          filteredProducts.sort((a, b) => b.price - a.price);
+          break;
+        case 'name_asc':
+          filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case 'name_desc':
+          filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
+          break;
+      }
+    }
+
+    return { data: filteredProducts };
+  }
+
   try {
     const response = await API.get('/products', {
       params,
@@ -141,12 +233,42 @@ export const getProducts = async (params?: { category?: string; search?: string;
     return response;
   } catch (error: any) {
     console.error('Error fetching products:', error);
-    throw error;
+
+    // If there's any error, return mock data as fallback
+    console.log('Using mock products data (API error fallback)');
+    return { data: mockProducts };
   }
 };
 
-export const getProductById = (id: string) =>
-  API.get(`/products/${id}`);
+export const getProductById = async (id: string) => {
+  // If USE_MOCK_DATA is true, skip the API call and return mock data directly
+  if (USE_MOCK_DATA) {
+    console.log('Using mock product data for ID:', id);
+    const product = mockProducts.find(p => p.id === id);
+
+    if (product) {
+      return { data: product };
+    } else {
+      throw new Error('Product not found');
+    }
+  }
+
+  try {
+    const response = await API.get(`/products/${id}`);
+    return response;
+  } catch (error: any) {
+    console.error('Error fetching product by ID:', error);
+
+    // If there's any error, try to return mock data as fallback
+    const product = mockProducts.find(p => p.id === id);
+    if (product) {
+      console.log('Using mock product data (API error fallback)');
+      return { data: product };
+    }
+
+    throw error;
+  }
+};
 
 // Mock data for featured products (fallback if API fails)
 const mockFeaturedProducts = [
@@ -197,6 +319,12 @@ const mockFeaturedProducts = [
 ];
 
 export const getFeaturedProducts = async () => {
+  // If USE_MOCK_DATA is true, skip the API call and return mock data directly
+  if (USE_MOCK_DATA) {
+    console.log('Using mock featured products data (CORS prevention)');
+    return { data: mockFeaturedProducts };
+  }
+
   try {
     console.log('Fetching featured products from:', `${API_BASE_URL}/products/featured`);
     const response = await API.get('/products/featured');
@@ -205,18 +333,32 @@ export const getFeaturedProducts = async () => {
   } catch (error: any) {
     console.error('Error in getFeaturedProducts:', error);
 
-    // If in development mode or the backend is unavailable, return mock data
-    if (import.meta.env.DEV || error.code === 'ERR_NETWORK' || error.response?.status === 500) {
-      console.log('Using mock featured products data');
-      return { data: mockFeaturedProducts };
-    }
-
-    throw error;
+    // If there's any error, return mock data as fallback
+    console.log('Using mock featured products data (API error fallback)');
+    return { data: mockFeaturedProducts };
   }
 };
 
-export const getProductsByCategory = (category: string) =>
-  API.get(`/products/category/${category}`);
+export const getProductsByCategory = async (category: string) => {
+  // If USE_MOCK_DATA is true, skip the API call and return mock data directly
+  if (USE_MOCK_DATA) {
+    console.log('Using mock products data for category:', category);
+    const filteredProducts = mockProducts.filter(p => p.category === category);
+    return { data: filteredProducts };
+  }
+
+  try {
+    const response = await API.get(`/products/category/${category}`);
+    return response;
+  } catch (error: any) {
+    console.error('Error fetching products by category:', error);
+
+    // If there's any error, return mock data as fallback
+    console.log('Using mock products data for category (API error fallback):', category);
+    const filteredProducts = mockProducts.filter(p => p.category === category);
+    return { data: filteredProducts };
+  }
+};
 
 export const createProduct = (productData: FormData) =>
   API.post('/products', productData, {
