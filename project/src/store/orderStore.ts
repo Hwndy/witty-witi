@@ -64,6 +64,18 @@ const useOrderStore = create<OrderState>((set) => ({
       set({ isLoading: true, error: null });
       console.log('Placing order with data:', orderData);
 
+      // Validate order items
+      if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+        throw new Error('Order must contain at least one item');
+      }
+
+      // Check if each item has a product ID
+      for (const item of orderData.items) {
+        if (!item.product && !item.productId) {
+          throw new Error('Each order item must have a product ID');
+        }
+      }
+
       // Call the API to create the order (which now uses the mock system)
       const response = await createOrder(orderData);
 

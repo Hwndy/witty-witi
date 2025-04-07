@@ -261,6 +261,18 @@ const createMockOrder = (orderData: any) => {
   // Generate a random order ID
   const orderId = 'mock_' + Math.random().toString(36).substring(2, 15);
 
+  // Validate order items
+  if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+    throw new Error('Order must contain at least one item');
+  }
+
+  // Check if each item has a product ID
+  for (const item of orderData.items) {
+    if (!item.product && !item.productId) {
+      throw new Error('Each order item must have a product ID');
+    }
+  }
+
   // Create a complete mock order
   const mockOrder = {
     id: orderId,
@@ -306,13 +318,26 @@ export const createOrder = async (orderData: any) => {
     return createMockOrder(orderData);
 
     /* Commented out real API call until backend is fixed
+    // Validate order items
+    if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+      throw new Error('Order must contain at least one item');
+    }
+
+    // Check if each item has a product ID
+    for (const item of orderData.items) {
+      if (!item.product && !item.productId) {
+        throw new Error('Each order item must have a product ID');
+      }
+    }
+
     // Ensure product IDs are properly formatted for MongoDB
     const formattedOrderData = {
       ...orderData,
       items: orderData.items.map((item: any) => ({
         ...item,
         // Ensure product is a string (ID)
-        product: typeof item.product === 'string' ? item.product : item.product.id
+        product: typeof item.product === 'string' ? item.product :
+                 item.product?.id || item.productId || 'unknown_product_id'
       }))
     };
 

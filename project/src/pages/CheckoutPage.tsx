@@ -89,6 +89,7 @@ const CheckoutPage: React.FC = () => {
           return {
             // Always use 'product' as the key for the product ID
             product: productId,
+            productId: productId, // Include both for compatibility
             name: item.product.name,
             price: item.product.price,
             quantity: item.quantity,
