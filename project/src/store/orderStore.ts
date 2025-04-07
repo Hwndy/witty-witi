@@ -64,51 +64,49 @@ const useOrderStore = create<OrderState>((set) => ({
       set({ isLoading: true, error: null });
       console.log('Processing order...');
 
-      // Skip validation - the mock system will handle it
-
-      try {
-        // Call the mock order creation function
-        const response = await createOrder(orderData);
-
-        // Handle the response from the mock system
-        if (!response.data) {
-          throw new Error('No response data received');
-        }
-
-        // Get the order from the response
-        const order = response.data.order || response.data;
-        console.log('Order created successfully:', order);
-
-        // Show success toast
-        toast.success('Order placed successfully!');
-
-        // Format the order to match our frontend model
-        const formattedOrder = {
-          id: order.id,
-          totalPrice: order.totalPrice,
-          status: order.status || 'pending',
-          createdAt: order.createdAt || new Date().toISOString(),
-          items: order.items || orderData.items,
-          customerName: order.customerName || orderData.customerName,
-          customerEmail: order.customerEmail || orderData.customerEmail,
-          customerPhone: order.customerPhone || orderData.customerPhone,
-          shippingAddress: order.shippingAddress || orderData.shippingAddress,
-          paymentMethod: order.paymentMethod || orderData.paymentMethod,
-          paymentStatus: order.paymentStatus || 'pending',
-          updatedAt: order.updatedAt || order.createdAt || new Date().toISOString()
-        };
-
-        // Update the store with the new order
-        set((state) => ({
-          orders: [formattedOrder, ...state.orders],
-          currentOrder: formattedOrder
-        }));
-
-        return formattedOrder;
-      } catch (innerError) {
-        console.error('Error in mock order creation:', innerError);
-        throw innerError;
+      // Validate order data
+      if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+        throw new Error('Order must contain at least one item');
       }
+
+      // Call the API to create the order
+      const response = await createOrder(orderData);
+
+      // Handle the response
+      if (!response.data) {
+        throw new Error('No response data received');
+      }
+
+      // Get the order from the response
+      const order = response.data.order || response.data;
+      console.log('Order created successfully:', order);
+
+      // Show success toast
+      toast.success('Order placed successfully!');
+
+      // Format the order to match our frontend model
+      const formattedOrder = {
+        id: order._id || order.id,
+        totalPrice: order.totalPrice,
+        status: order.status || 'pending',
+        createdAt: order.createdAt || new Date().toISOString(),
+        items: order.items || orderData.items,
+        customerName: order.customerName || orderData.customerName,
+        customerEmail: order.customerEmail || orderData.customerEmail,
+        customerPhone: order.customerPhone || orderData.customerPhone,
+        shippingAddress: order.shippingAddress || orderData.shippingAddress,
+        paymentMethod: order.paymentMethod || orderData.paymentMethod,
+        paymentStatus: order.paymentStatus || 'pending',
+        updatedAt: order.updatedAt || order.createdAt || new Date().toISOString()
+      };
+
+      // Update the store with the new order
+      set((state) => ({
+        orders: [formattedOrder, ...state.orders],
+        currentOrder: formattedOrder
+      }));
+
+      return formattedOrder;
     } catch (error: any) {
       console.error('Error in placeOrder:', error);
 

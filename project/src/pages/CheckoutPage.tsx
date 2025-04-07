@@ -75,21 +75,19 @@ const CheckoutPage: React.FC = () => {
       // Show loading toast
       toast.loading('Processing your order...', { id: 'order-processing' });
 
-      // Log the items to debug
-      console.log('Cart items before mapping:', JSON.stringify(items, null, 2));
+      // Log the cart items for debugging
+      console.log('Cart items before creating order:', JSON.stringify(items, null, 2));
 
-      // Create a complete order object with all necessary data
+      // Create a properly formatted order object for the backend
       const orderData = {
-        // Save the complete cart items with all product data
+        // Format items with required product field
         items: items.map(item => ({
-          // Include the full product object for reference
-          product: item.product.id,
-          productId: item.product.id,
-          productData: item.product, // Keep the full product data
-          name: item.product.name,
-          price: item.product.price,
+          // The backend expects 'product' to be the MongoDB ObjectId
+          product: item.product.id, // This is the required field
           quantity: item.quantity,
-          image: item.product.image
+          price: item.product.price,
+          name: item.product.name
+          // Don't include extra fields that might confuse the backend
         })),
         totalPrice: getTotalPrice() * 1.05, // Including tax
         shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,

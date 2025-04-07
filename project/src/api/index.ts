@@ -3,12 +3,8 @@ import toast from 'react-hot-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://witty-witti-backend.onrender.com/api';
 
-// Check if we're running in production (on Vercel)
-const isProduction = window.location.hostname !== 'localhost' &&
-                    !window.location.hostname.includes('127.0.0.1');
-
-// If in production, use mock data by default to avoid CORS issues
-const USE_MOCK_DATA = isProduction || import.meta.env.VITE_USE_MOCK_DATA === 'true';
+// We'll use the actual API for all environments
+const USE_MOCK_DATA = false;
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -479,68 +475,58 @@ const createMockOrder = (orderData: any) => {
   };
 };
 
-// Direct mock order creation - completely bypasses the API
+// Create an order using the actual API
 export const createOrder = async (orderData: any) => {
   try {
-    console.log('Creating order with mock system');
+    console.log('Creating order with API');
+    console.log('Order data being sent:', JSON.stringify(orderData, null, 2));
 
-    // Skip the real API call entirely
-    // This ensures orders can be placed without any backend dependency
-    return createMockOrder(orderData);
-
-    /* Commented out real API call until backend is fixed
-    // Validate order items
-    if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
-      throw new Error('Order must contain at least one item');
-    }
-
-    // Check if each item has a product ID
-    for (const item of orderData.items) {
-      if (!item.product && !item.productId) {
-        throw new Error('Each order item must have a product ID');
-      }
-    }
-
-    // Ensure product IDs are properly formatted for MongoDB
+    // Ensure the order data is properly formatted
     const formattedOrderData = {
       ...orderData,
+      // Make sure each item has the required product field
       items: orderData.items.map((item: any) => ({
-        ...item,
-        // Ensure product is a string (ID)
-        product: typeof item.product === 'string' ? item.product :
-                 item.product?.id || item.productId || 'unknown_product_id'
+        product: item.product, // This should be the product ID
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name
       }))
     };
 
-    console.log('Order data being sent:', JSON.stringify(formattedOrderData, null, 2));
-
-    try {
-      // Add a timeout to the request
-      const response = await API.post('/orders', formattedOrderData, { timeout: 60000 });
-      console.log('Order creation response:', response.data);
-      return response;
-    } catch (apiError: any) {
-      // If we get a server error, use mock data
-      if (apiError.response?.status === 500 || apiError.response?.status === 400 || apiError.code === 'ERR_NETWORK') {
-        console.warn('Using mock order creation due to API error');
-        return createMockOrder(orderData);
-      }
-      throw apiError; // Re-throw if not handled
-    }
-    */
+    // Make the actual API call
+    const response = await API.post('/orders', formattedOrderData);
+    console.log('Order creation response:', response.data);
+    return response;
   } catch (error: any) {
     console.error('Error in createOrder:', error);
 
-    // Try to use mock order as a last resort
-    try {
-      console.warn('Attempting to use mock order as fallback after error');
-      return createMockOrder(orderData);
-    } catch (mockError) {
-      console.error('Even mock order creation failed:', mockError);
-    }
+    // Handle different error types
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Server responded with error:', error.response.status);
+      console.error('Error data:', error.response.data);
 
-    // If all else fails, throw a user-friendly error
-    throw new Error('Unable to place your order at this time. Please try again later.');
+      if (error.response.status === 401) {
+        throw new Error('Authentication required to place order');
+      } else if (error.response.status === 400) {
+        // Bad request - likely validation error
+        const errorMessage = error.response.data?.message ||
+                            error.response.data?.error ||
+                            'Invalid order data. Please check your information.';
+        throw new Error(errorMessage);
+      } else {
+        throw new Error(error.response.data?.message || 'Server error while creating order');
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+      throw new Error('No response from server. Please try again later.');
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Request setup error:', error.message);
+      throw new Error('Error setting up request: ' + error.message);
+    }
   }
 };
 
