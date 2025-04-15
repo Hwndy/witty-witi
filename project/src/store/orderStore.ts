@@ -97,7 +97,9 @@ const useOrderStore = create<OrderState>((set) => ({
         shippingAddress: order.shippingAddress || orderData.shippingAddress,
         paymentMethod: order.paymentMethod || orderData.paymentMethod,
         paymentStatus: order.paymentStatus || 'pending',
-        updatedAt: order.updatedAt || order.createdAt || new Date().toISOString()
+        updatedAt: order.updatedAt || order.createdAt || new Date().toISOString(),
+        // Handle both MongoDB and frontend formats
+        user: order.user || req.user?._id || null
       };
 
       // Update the store with the new order

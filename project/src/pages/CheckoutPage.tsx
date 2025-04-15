@@ -86,8 +86,8 @@ const CheckoutPage: React.FC = () => {
           product: item.product.id, // This is the required field
           quantity: item.quantity,
           price: item.product.price,
-          name: item.product.name
-          // Don't include extra fields that might confuse the backend
+          name: item.product.name,
+          image: item.product.image // Include image for display purposes
         })),
         totalPrice: getTotalPrice() * 1.05, // Including tax
         shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,

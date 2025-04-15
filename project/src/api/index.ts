@@ -545,17 +545,15 @@ const getMockOrders = () => {
 
 export const getOrders = async () => {
   try {
-    // Use mock orders instead of real API
-    console.log('Using mock orders instead of API call');
-    return getMockOrders();
-
-    /* Commented out real API call
+    console.log('Fetching orders from API');
     const response = await API.get('/orders');
+    console.log('Orders fetched successfully:', response.data.length);
     return response;
-    */
   } catch (error) {
     console.error('Error getting orders:', error);
-    return getMockOrders(); // Fallback to mock orders
+    // Fallback to mock orders if API fails
+    console.warn('Falling back to mock orders');
+    return getMockOrders();
   }
 };
 
@@ -581,17 +579,15 @@ const getMockOrderById = (id: string) => {
 
 export const getOrderById = async (id: string) => {
   try {
-    // Use mock order instead of real API
-    console.log('Using mock order instead of API call for ID:', id);
-    return getMockOrderById(id);
-
-    /* Commented out real API call
+    console.log('Fetching order from API with ID:', id);
     const response = await API.get(`/orders/${id}`);
+    console.log('Order fetched successfully:', response.data);
     return response;
-    */
   } catch (error) {
     console.error('Error getting order by ID:', error);
-    return getMockOrderById(id); // Fallback to mock order
+    // Fallback to mock order if API fails
+    console.warn('Falling back to mock order');
+    return getMockOrderById(id);
   }
 };
 
@@ -663,49 +659,43 @@ const cancelMockOrder = (id: string) => {
 
 export const updateOrderStatus = async (id: string, status: string) => {
   try {
-    // Use mock system instead of real API
-    console.log('Using mock system to update order status:', id, status);
-    return updateMockOrderStatus(id, status);
-
-    /* Commented out real API call
+    console.log('Updating order status via API:', id, status);
     const response = await API.put(`/orders/${id}/status`, { status });
+    console.log('Order status updated successfully:', response.data);
     return response;
-    */
   } catch (error) {
     console.error('Error updating order status:', error);
-    return updateMockOrderStatus(id, status); // Fallback to mock system
+    // Fallback to mock system if API fails
+    console.warn('Falling back to mock system for status update');
+    return updateMockOrderStatus(id, status);
   }
 };
 
 export const updatePaymentStatus = async (id: string, paymentStatus: string) => {
   try {
-    // Use mock system instead of real API
-    console.log('Using mock system to update payment status:', id, paymentStatus);
-    return updateMockPaymentStatus(id, paymentStatus);
-
-    /* Commented out real API call
+    console.log('Updating payment status via API:', id, paymentStatus);
     const response = await API.put(`/orders/${id}/payment`, { paymentStatus });
+    console.log('Payment status updated successfully:', response.data);
     return response;
-    */
   } catch (error) {
     console.error('Error updating payment status:', error);
-    return updateMockPaymentStatus(id, paymentStatus); // Fallback to mock system
+    // Fallback to mock system if API fails
+    console.warn('Falling back to mock system for payment status update');
+    return updateMockPaymentStatus(id, paymentStatus);
   }
 };
 
 export const cancelOrder = async (id: string) => {
   try {
-    // Use mock system instead of real API
-    console.log('Using mock system to cancel order:', id);
-    return cancelMockOrder(id);
-
-    /* Commented out real API call
+    console.log('Cancelling order via API:', id);
     const response = await API.put(`/orders/${id}/cancel`);
+    console.log('Order cancelled successfully:', response.data);
     return response;
-    */
   } catch (error) {
     console.error('Error cancelling order:', error);
-    return cancelMockOrder(id); // Fallback to mock system
+    // Fallback to mock system if API fails
+    console.warn('Falling back to mock system for order cancellation');
+    return cancelMockOrder(id);
   }
 };
 
